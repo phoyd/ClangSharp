@@ -80,6 +80,8 @@ namespace ClangSharpPInvokeGenerator
         public static string ToMarshalString(this CXCursor cursor, string cursorSpelling)
         {
             var canonical = clang.getCanonicalType(clang.getCursorType(cursor));
+            if (cursorSpelling == "windowsio")
+                System.Diagnostics.Debugger.Break();
 
             switch (canonical.kind)
             {
@@ -88,10 +90,13 @@ namespace ClangSharpPInvokeGenerator
                     var elementType = clang.getCanonicalType(clang.getArrayElementType(canonical));
 
                     var sb = new StringBuilder();
+                    sb.Append($"public @{cursorSpelling}_padding_struct @{cursorSpelling}_padding;");
+                    sb.Append($"public struct @{cursorSpelling}_padding_struct {{"); 
                     for (int i = 0; i < arraySize; ++i)
                     {
                         sb.Append("public " + elementType.ToPlainTypeString() + " @" + cursorSpelling + i + "; ");
                     }
+                    sb.Append("}");
 
                     return sb.ToString().TrimEnd();
                 case CXTypeKind.CXType_Pointer:

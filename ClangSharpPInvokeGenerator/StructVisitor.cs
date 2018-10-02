@@ -30,7 +30,9 @@ namespace ClangSharpPInvokeGenerator
             }
 
             CXCursorKind curKind = clang.getCursorKind(cursor);
-            if (curKind == CXCursorKind.CXCursor_StructDecl)
+            bool isUnion = (curKind == CXCursorKind.CXCursor_UnionDecl);
+            bool isStruct = (curKind == CXCursorKind.CXCursor_StructDecl);
+            if (isUnion || isStruct)
             {
                 this.fieldPosition = 0;
                 var structName = clang.getCursorSpelling(cursor).ToString();
@@ -50,6 +52,8 @@ namespace ClangSharpPInvokeGenerator
 
                 if (!this.visitedStructs.Contains(structName))
                 {
+                    if (isUnion)
+                       this.IndentedWriteLine("[StructLayout(LayoutKind.Explicit)]");
                     this.IndentedWriteLine("public partial struct " + structName);
                     this.IndentedWriteLine("{");
 
@@ -75,6 +79,13 @@ namespace ClangSharpPInvokeGenerator
                 }
 
                 this.fieldPosition++;
+                bool isUnionField = (clang.getCursorKind(parent) == CXCursorKind.CXCursor_UnionDecl);
+                if (isUnionField)
+                    this.IndentedWriteLine("[FieldOffset(0)]");
+                if (fieldName=="padding")
+                {
+                    System.Diagnostics.Debugger.Break(); 
+                }
                 this.IndentedWriteLine(cursor.ToMarshalString(fieldName));
                 return CXChildVisitResult.CXChildVisit_Continue;
             }
